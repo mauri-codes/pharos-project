@@ -33,6 +33,12 @@ require_cmd() {
   fi
 }
 
+verify_aws_access() {
+  require_cmd aws
+  log "Verifying AWS credentials"
+  aws sts get-caller-identity >/dev/null
+}
+
 detect_arch() {
   local machine
   machine="$(uname -m)"
@@ -90,7 +96,7 @@ install_terraform() {
   sums_file="${tmp_dir}/terraform_${version}_SHA256SUMS"
   install_dir="${HOME}/.local/bin"
 
-  trap 'rm -rf "${tmp_dir}"' RETURN
+  trap 'rm -rf "'"${tmp_dir}"'"' RETURN
 
   log "Installing Terraform ${version} for linux_${arch}"
   mkdir -p "$install_dir"
@@ -148,10 +154,11 @@ main() {
   require_cmd bash
 
   install_terraform
+  verify_aws_access
 
   tmp_dir="$(mktemp -d)"
   repo_dir="${tmp_dir}/pharos-project"
-  trap 'rm -rf "${tmp_dir}"' EXIT
+  trap 'rm -rf "'"${tmp_dir}"'"' EXIT
 
   log "Cloning deploy/${project} from ${REPO_URL}"
   git clone --depth 1 --filter=blob:none --sparse "$REPO_URL" "$repo_dir" >/dev/null 2>&1

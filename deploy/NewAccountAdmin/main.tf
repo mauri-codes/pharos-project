@@ -6,6 +6,14 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 5.0"
     }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.6"
+    }
+    null = {
+      source  = "hashicorp/null"
+      version = "~> 3.2"
+    }
   }
 }
 
@@ -35,13 +43,43 @@ resource "aws_iam_user_group_membership" "admin" {
   groups = [aws_iam_group.admin.name]
 }
 
-resource "aws_iam_user_login_profile" "admin" {
-  user                    = aws_iam_user.admin.name
-  password_reset_required = true
-  pgp_key                 = var.bootstrap_pgp_key
+resource "random_password" "initial_console_password" {
+  length           = 24
+  min_lower        = 2
+  min_numeric      = 2
+  min_special      = 2
+  min_upper        = 2
+  override_special = "!@#%^*-_=+?"
+}
+
+resource "null_resource" "login_profile" {
+  triggers = {
+    admin_user_name = aws_iam_user.admin.name
+    password        = random_password.initial_console_password.result
+  }
+
+  provisioner "local-exec" {
+    command = <<-EOT
+      set -euo pipefail
+
+      if aws iam get-login-profile --user-name '${self.triggers.admin_user_name}' >/dev/null 2>&1; then
+        aws iam update-login-profile \
+          --user-name '${self.triggers.admin_user_name}' \
+          --password '${self.triggers.password}' \
+          --password-reset-required
+      else
+        aws iam create-login-profile \
+          --user-name '${self.triggers.admin_user_name}' \
+          --password '${self.triggers.password}' \
+          --password-reset-required
+      fi
+    EOT
+    interpreter = ["/bin/bash", "-c"]
+  }
+
+  depends_on = [aws_iam_user_group_membership.admin]
 }
 
 resource "aws_iam_access_key" "admin" {
-  user    = aws_iam_user.admin.name
-  pgp_key = var.bootstrap_pgp_key
+  user = aws_iam_user.admin.name
 }
