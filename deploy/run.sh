@@ -17,8 +17,13 @@ usage() {
   cat <<'EOF'
 Usage: ./run.sh <project>
 
+This script is intended to be run from AWS CloudShell on Linux.
+
 Example:
   ./run.sh NewAccountAdmin
+
+CloudShell example without cloning the full repo:
+  curl -fsSL https://raw.githubusercontent.com/mauri-codes/pharos-project/main/deploy/run.sh | bash -s -- NewAccountAdmin
 EOF
 }
 
