@@ -14,7 +14,7 @@ variable "role_name" {
 
 variable "role_path" {
   type        = string
-  default     = "/pharos"
+  default     = "/pharos/"
 }
 
 variable "role_description" {
@@ -29,7 +29,7 @@ variable "policy_name" {
 
 variable "policy_path" {
   type        = string
-  default     = "/pharos"
+  default     = "/pharos/"
 }
 
 variable "policy_description" {
